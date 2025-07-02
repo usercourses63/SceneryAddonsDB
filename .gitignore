@@ -358,3 +358,13 @@ publish-final/
 display-table.ps1
 show-table.ps1
 test-api.bat
+
+# Downloads and large files
+Downloads/
+*.rar
+*.7z
+*.tar.gz
+
+# Keep only the final release zip
+SceneryAddonsDB-Release.zip
+!SceneryAddonsDB-v*.zip
