@@ -1,270 +1,304 @@
+# SceneryAddonsDB
 
-# 🎮 Scenery Addons Database API
+A comprehensive .NET 9 Web API for managing, tracking, and **downloading** Microsoft Flight Simulator scenery addons from SceneryAddons.org with **real BitTorrent integration**.
 
-A comprehensive .NET 9 Web API for managing and browsing flight simulator scenery addons with automated web scraping, MongoDB integration, and Docker container management.
+## 🚀 Features
 
-## ✨ Features
+### 🎯 Core Features
+- **Real-time Scraping**: Automatically scrapes the latest addons from SceneryAddons.org
+- **MongoDB Integration**: Stores addon data with full CRUD operations
+- **RESTful API**: Complete API endpoints for addon management
+- **Background Processing**: Automated hourly scraping with background workers
+- **Docker Support**: Automated MongoDB container management
+- **Swagger Documentation**: Interactive API documentation
+- **Report Generation**: Detailed analytics and statistics
 
-### 🚀 **Core Functionality**
-- **Automated Web Scraping**: Scrapes sceneryaddons.org for the latest addon information
-- **MongoDB Integration**: Stores and manages 2,100+ scenery addons with full CRUD operations
-- **RESTful API**: Full Web API with comprehensive endpoints for addon management
-- **Real-time Updates**: Hourly automated scraping with manual trigger support
+### 🧲 **NEW: Download Management**
+- **Real BitTorrent Downloads**: Download actual addon files using MonoTorrent 3.0.2
+- **Concurrent Downloads**: Configurable concurrent download limits (1-10 per session)
+- **Automatic File Organization**: Files organized by compatibility (2020, 2024, 2020-2024)
+- **Progress Monitoring**: Real-time download progress and speed tracking
+- **Session Management**: Multiple download sessions with full control
+- **Magnet Link Extraction**: Automatically extracts torrent magnet links
+- **Download Statistics**: Comprehensive download metrics and reporting
 
-### 📊 **Advanced Features**
-- **Interactive Swagger Documentation**: Available in both development and production
-- **Embedded Console Reporting**: Beautiful formatted status reports displayed directly in console
-- **Table & List Views**: Optimized data formats for different use cases
-- **Advanced Filtering**: Search by compatibility, date ranges, and text queries
-- **Pagination Support**: Efficient data browsing with configurable page sizes
+## 🛠️ Technology Stack
 
-### 🐳 **Infrastructure Management**
-- **Automated MongoDB Docker Management**: Automatically detects, creates, and manages MongoDB containers
-- **Persistent Data Storage**: Uses Docker volumes for data persistence
-- **Smart Container Detection**: Works with existing MongoDB installations
-- **Self-Contained Deployment**: Single executable with embedded .NET runtime
+- **.NET 9**: Latest .NET framework
+- **ASP.NET Core Web API**: RESTful API framework
+- **MongoDB.Entities**: Modern MongoDB ODM
+- **MonoTorrent 3.0.2**: BitTorrent client library for real downloads
+- **HtmlAgilityPack**: Web scraping library
+- **Docker**: Container management for MongoDB
+- **Swagger/OpenAPI**: API documentation
+- **Background Services**: Automated data processing
 
-### 🎯 **Data Management**
-- **Compatibility Tracking**: MSFS 2020, MSFS 2024, and MSFS 2020/2024 support
-- **Duplicate Prevention**: Intelligent deduplication based on file names
-- **Update Tracking**: Monitors new, updated, and unchanged addons
-- **Error Handling**: Comprehensive logging and graceful error recovery
+## 📋 Prerequisites
 
-## 🏗️ **Architecture**
-
-### **Technology Stack**
-- **.NET 9**: Latest .NET framework with C# 13
-- **ASP.NET Core**: Full Web API with controllers
-- **MongoDB.Entities**: Modern MongoDB integration
-- **HtmlAgilityPack**: Web scraping and HTML parsing
-- **Swagger/OpenAPI**: Interactive API documentation
-- **Docker**: Containerized MongoDB deployment
-- **xUnit**: Comprehensive testing framework
-
-### **Project Structure**
-```
-src/
-├── Addons.Api/                 # Main Web API project
-│   ├── Controllers/            # API controllers
-│   ├── Services/               # Business logic services
-│   ├── Models/                 # Data models and DTOs
-│   ├── BackgroundJobs/         # Scheduled tasks
-│   └── Extensions/             # Service extensions
-├── Addons.Tests/               # Unit and integration tests
-└── Addons.sln                 # Solution file
-```
-
-## 🚀 **Quick Start**
-
-### **Prerequisites**
 - .NET 9 SDK
 - Docker Desktop (for MongoDB)
-- Windows 10+ (for executable deployment)
+- Git
+- **BitTorrent Client** (optional, for manual downloads)
 
-### **Option 1: Run from Source**
+## 🚀 Quick Start
+
+### 1. Clone the Repository
 ```bash
-# Clone the repository
 git clone https://github.com/usercourses63/SceneryAddonsDB.git
 cd SceneryAddonsDB
+```
 
-# Run the application
+### 2. Run the Application
+```bash
+# Start the API (MongoDB will be automatically managed)
 dotnet run --project src/Addons.Api
 
-# Access Swagger UI
-# Navigate to: http://localhost:5269/swagger
+# Or use the console application with download support
+dotnet run --project src/Addons.Console -- -c 5 -a  # Auto-download 5 latest addons
 ```
 
-### **Option 2: Run Self-Contained Executable**
+### 3. Access the API
+- **API**: http://localhost:5269
+- **Swagger Documentation**: http://localhost:5269/swagger
+- **Downloads**: Files saved to `Downloads/` folder organized by compatibility
+
+## 📊 API Endpoints
+
+### Addons Management
+- `GET /api/addons` - Get all addons with filtering and pagination
+- `GET /api/addons/{id}` - Get specific addon by ID
+- `POST /api/addons` - Create new addon
+- `PUT /api/addons/{id}` - Update existing addon
+- `DELETE /api/addons/{id}` - Delete addon
+
+### **🧲 Download Management (NEW)**
+- `POST /api/downloads/start` - Start download session with concurrent downloads
+- `GET /api/downloads/sessions/{id}/status` - Monitor download progress
+- `GET /api/downloads/sessions` - List all active download sessions
+- `POST /api/downloads/sessions/{id}/cancel` - Cancel download session
+- `GET /api/downloads/stats` - Get download statistics
+- `GET /api/downloads/folders` - View downloaded files by compatibility
+
+### Data Management
+- `POST /api/addons/scrape` - Trigger manual scraping
+- `GET /api/addons/latest` - Get latest addons
+- `GET /api/addons/stats` - Get database statistics
+
+### Reports
+- `GET /api/reports/summary` - Get comprehensive report
+- `GET /api/reports/compatibility` - Get compatibility breakdown
+- `GET /api/reports/recent` - Get recent additions report
+
+## 🎮 Console Application
+
+The console application now supports **real addon downloads**:
+
 ```bash
-# Download the latest release
-# Extract SceneryAddonsDB-Release.zip
+# Download latest addons automatically
+dotnet run --project src/Addons.Console -- -c 5 -a
 
-# Run the executable
-cd SceneryAddonsDB-Release
-.\Addons.Api.exe
+# Download with custom concurrency
+dotnet run --project src/Addons.Console -- -c 10 -a --concurrency 3
 
-# Access Swagger UI
-# Navigate to: http://localhost:5000/swagger
+# Get addons info without downloading
+dotnet run --project src/Addons.Console -- -c 10 -d
+
+# Filter by compatibility and download
+dotnet run --project src/Addons.Console -- -c 5 -a --compatibility "MSFS 2024"
+
+# Show help
+dotnet run --project src/Addons.Console -- --help
 ```
 
-## 📡 **API Endpoints**
+### Console Options
+- `-c, --count`: Number of addons to process (1-50)
+- `-a, --auto-download`: Automatically download addons
+- `-d, --detailed`: Show detailed information
+- `--concurrency`: Max concurrent downloads (1-10)
+- `--compatibility`: Filter by compatibility
+- `--help`: Show help information
 
-### **Core Endpoints**
-```http
-GET    /api/health                    # Health check
-GET    /api/addons                    # List addons (supports table/list format)
-GET    /api/addons/latest             # Get latest addons
-GET    /api/addons/stats              # Addon statistics
-GET    /api/addons/compatibility      # Compatibility information
-```
+## 🧲 Download API Usage Examples
 
-### **Management Endpoints**
-```http
-POST   /api/scraper/refresh           # Manual scrape trigger (requires token)
-GET    /api/reports/status            # Status report (JSON)
-POST   /api/reports/status/console    # Display report to console
-```
-
-### **Example Usage**
+### Start Download Session
 ```bash
-# Get addons in table format
-curl "http://localhost:5269/api/addons?format=table&pageSize=10"
-
-# Filter by compatibility
-curl "http://localhost:5269/api/addons?compatibility=MSFS%202024"
-
-# Search addons
-curl "http://localhost:5269/api/addons?search=airport&pageSize=5"
-
-# Trigger manual scrape (requires authentication)
-curl -X POST "http://localhost:5269/api/scraper/refresh" \
-     -H "X-Refresh-Token: your-token-here"
+curl -X POST "http://localhost:5269/api/downloads/start" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "count": 5,
+    "maxConcurrency": 3,
+    "compatibility": "MSFS 2024",
+    "forceRedownload": false
+  }'
 ```
 
-## 🔧 **Configuration**
+### Monitor Progress
+```bash
+curl -X GET "http://localhost:5269/api/downloads/sessions/{sessionId}/status"
+```
 
-### **Application Settings** (`appsettings.json`)
+### Get Download Statistics
+```bash
+curl -X GET "http://localhost:5269/api/downloads/stats"
+```
+
+## 🔧 Configuration
+
+### Database & Download Settings (appsettings.json)
 ```json
 {
-  "Mongo": {
+  "MongoDb": {
     "ConnectionString": "mongodb://localhost:27017",
-    "DatabaseName": "sceneryaddons"
+    "DatabaseName": "SceneryAddonsDB"
   },
-  "RefreshToken": "your-secure-token-here",
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information"
-    }
+  "DownloadSettings": {
+    "BaseDownloadPath": "Downloads",
+    "MaxGlobalConcurrency": 5,
+    "DownloadTimeoutMinutes": 30,
+    "OrganizeByCompatibility": true,
+    "SkipExistingFiles": true
   }
 }
 ```
 
-### **Environment Variables**
-- `ASPNETCORE_ENVIRONMENT`: Set to `Development` or `Production`
-- `ASPNETCORE_URLS`: Override default listening URLs
+### Download Organization
+Files are automatically organized by compatibility:
+```
+Downloads/
+├── 2020/           # MSFS 2020 only addons
+├── 2024/           # MSFS 2024 only addons
+├── 2020-2024/      # Compatible with both versions
+└── Other/          # Unknown compatibility
+```
 
-## 📊 **Database Schema**
+## 📈 Data Models
 
-### **Addon Model**
+### Download Request
 ```csharp
-public class Addon
+public class DownloadRequest
 {
-    public string ID { get; set; }              // MongoDB ObjectId
-    public string FileName { get; set; }        // Unique file name
-    public string Name { get; set; }            // Display name
-    public string Compatibility { get; set; }   // MSFS version compatibility
-    public DateTime DateAdded { get; set; }     // Date added to database
-    public DateTime CreatedAt { get; set; }     // Record creation timestamp
-    public DateTime UpdatedAt { get; set; }     // Last update timestamp
+    public int Count { get; set; } = 5;              // 1-50 addons
+    public int MaxConcurrency { get; set; } = 3;     // 1-10 concurrent
+    public string? Compatibility { get; set; }       // Filter
+    public bool ForceRedownload { get; set; } = false;
 }
 ```
 
-## 🐳 **Docker Integration**
+### Download Progress
+```csharp
+public class DownloadItem
+{
+    public string FileName { get; set; }
+    public string Name { get; set; }
+    public string Compatibility { get; set; }
+    public DownloadStatus Status { get; set; }       // Queued, Downloading, Completed, Failed
+    public double Progress { get; set; }             // 0-100%
+    public long SpeedBytesPerSecond { get; set; }
+    public long TotalBytes { get; set; }
+    public string? LocalPath { get; set; }
+}
+```
 
-The application automatically manages MongoDB through Docker:
+## 🔄 Background Processing
 
-### **Automatic Container Management**
-- Detects existing MongoDB instances on port 27017
-- Creates new MongoDB container if none exists
-- Uses persistent Docker volumes for data storage
-- Handles container lifecycle automatically
+- **Automatic Scraping**: Runs every hour
+- **Download Management**: Concurrent session handling
+- **Progress Tracking**: Real-time monitoring
+- **Error Recovery**: Robust error handling
+- **Logging**: Comprehensive logging for monitoring
 
-### **Manual Docker Commands**
+## 🧲 BitTorrent Integration
+
+### MonoTorrent Features
+- **Real Downloads**: Downloads actual .rar addon files (2+ GB each)
+- **Magnet Links**: Extracts magnet links from SceneryAddons.org
+- **Peer Discovery**: Connects to BitTorrent swarm
+- **Progress Monitoring**: Real-time speed and progress
+- **Automatic Cleanup**: Stops seeding after download completion
+
+### Download Process
+1. **Scrape**: Extract addon information and download URLs
+2. **Extract**: Get magnet links from SceneryAddons.org torrent pages
+3. **Download**: Use MonoTorrent to download via BitTorrent
+4. **Organize**: Save files to compatibility-based folders
+5. **Monitor**: Track progress and provide real-time updates
+
+## 🐳 Docker Support
+
+### MongoDB Container Management
 ```bash
-# View MongoDB container
-docker ps | grep scenery-addons-mongodb
-
-# Access MongoDB directly
-docker exec -it scenery-addons-mongodb mongosh
-
-# View container logs
-docker logs scenery-addons-mongodb
+# Manual container operations (handled automatically by the app)
+docker run -d --name scenery-addons-mongodb -p 27017:27017 -v scenery-addons-data:/data/db mongo:latest
 ```
 
-## 📈 **Monitoring & Reporting**
+## 📝 Development
 
-### **Console Reports**
-The application displays beautiful formatted reports directly in the console:
-
+### Project Structure
 ```
-🎯 Application Status & New Addon Check Results
-================================================================================
-✅ Application Status:
-   Generated At: 2025-07-02 08:06:19 UTC
-   Database Status: Connected
-   Environment: Development
-
-📊 Database Statistics:
-   Total Addons: 2,132
-   Recent Addons (7 days): 23
-   Date Range: 2021-01-13 to 2025-06-26
-
-🎯 Compatibility Breakdown:
-   MSFS 2020/2024: 1,504 addons (70.5%)
-   MSFS 2020: 456 addons (21.4%)
-   MSFS 2024: 172 addons (8.1%)
+SceneryAddonsDB/
+├── src/
+│   ├── Addons.Api/          # Web API with download endpoints
+│   ├── Addons.Console/      # Console app with download support
+│   └── Addons.Shared/       # Shared models and utilities
+├── Downloads/               # Downloaded addon files (organized by compatibility)
+├── tests/                   # Unit and integration tests
+├── docs/                    # Documentation
+└── scripts/                 # Build and deployment scripts
 ```
 
-### **API Monitoring**
-- Health check endpoint for uptime monitoring
-- Detailed logging with structured output
-- Error tracking and reporting
-- Performance metrics
-
-## 🧪 **Testing**
-
-### **Run Tests**
+### Building
 ```bash
-# Run all tests
+# Build all projects
+dotnet build
+
+# Build specific project
+dotnet build src/Addons.Api
+
+# Run tests
 dotnet test
-
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
-
-# Run specific test category
-dotnet test --filter Category=Integration
 ```
 
-### **Test Categories**
-- **Unit Tests**: Service logic and business rules
-- **Integration Tests**: Database and API integration
-- **Performance Tests**: Load and stress testing
+## 🚀 Deployment
 
-## 🚀 **Deployment**
-
-### **Self-Contained Executable**
+### Production Deployment
 ```bash
-# Build self-contained executable
-dotnet publish src/Addons.Api -c Release -r win-x64 \
-  --self-contained true -p:PublishSingleFile=true -o ./publish
+# Publish API with download support
+dotnet publish src/Addons.Api -c Release -o publish/api
 
-# The executable includes:
-# - .NET 9 runtime
-# - All dependencies
-# - Application files
-# - Configuration
+# Publish Console App with download support
+dotnet publish src/Addons.Console -c Release -o publish/console
 ```
 
-### **Production Considerations**
-- Configure secure authentication tokens
-- Set up proper logging and monitoring
-- Configure MongoDB with authentication
-- Use HTTPS in production environments
-- Set up automated backups for MongoDB data
+### Environment Variables
+- `ASPNETCORE_ENVIRONMENT`: Set to `Production` for production
+- `MongoDb__ConnectionString`: Override MongoDB connection
+- `MongoDb__DatabaseName`: Override database name
+- `DownloadSettings__BaseDownloadPath`: Override download location
+- `DownloadSettings__MaxGlobalConcurrency`: Override max concurrent downloads
 
-## 📝 **API Documentation**
+## 📊 Monitoring and Logging
 
-### **Swagger UI**
-- **Development**: `http://localhost:5269/swagger`
-- **Production**: `http://localhost:5000/swagger`
+- **Download Progress**: Real-time progress monitoring
+- **Session Management**: Track multiple download sessions
+- **Performance Metrics**: Download speeds and completion rates
+- **Error Tracking**: Comprehensive download error logging
+- **Statistics**: Download success/failure rates
 
-### **OpenAPI Specification**
-- Complete API documentation with examples
-- Interactive testing interface
-- Request/response schemas
-- Authentication requirements
+## 🎯 Use Cases
 
-## 🤝 **Contributing**
+### For Flight Sim Enthusiasts
+- **Bulk Downloads**: Download multiple addons automatically
+- **Organization**: Files organized by MSFS version compatibility
+- **Progress Tracking**: Monitor download progress in real-time
+- **API Integration**: Build custom tools using the REST API
+
+### For Developers
+- **REST API**: Complete download management API
+- **Real-time Updates**: WebSocket-style progress monitoring
+- **Concurrent Processing**: Handle multiple downloads efficiently
+- **Extensible**: Easy to add new download sources
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -272,22 +306,22 @@ dotnet publish src/Addons.Api -c Release -r win-x64 \
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 **License**
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 **Acknowledgments**
+## 🙏 Acknowledgments
 
-- **sceneryaddons.org** - Source of addon data
-- **MongoDB.Entities** - Excellent MongoDB integration
-- **HtmlAgilityPack** - Reliable web scraping
-- **ASP.NET Core** - Robust web framework
+- **SceneryAddons.org**: Source of addon data and download links
+- **MonoTorrent**: Excellent BitTorrent client library
+- **MongoDB.Entities**: Excellent MongoDB ODM
+- **HtmlAgilityPack**: Powerful web scraping capabilities
+- **Microsoft Flight Simulator Community**: Inspiration and support
 
-## 📞 **Support**
+## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/usercourses63/SceneryAddonsDB/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/usercourses63/SceneryAddonsDB/discussions)
+For support, please open an issue on GitHub or contact the maintainers.
 
 ---
 
-**Built with ❤️ for the flight simulation community**
+**Happy Flying with Real Addon Downloads!** ✈️🎮🧲

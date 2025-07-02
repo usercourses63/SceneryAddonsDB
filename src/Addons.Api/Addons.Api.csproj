@@ -6,6 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Product>SceneryAddonsDB API with Download Management</Product>
+    <Description>Comprehensive .NET 9 Web API for managing and downloading Microsoft Flight Simulator scenery addons with real BitTorrent integration</Description>
+    <Authors>SceneryAddonsDB Team</Authors>
+    <Company>SceneryAddonsDB</Company>
+    <Copyright>Copyright © 2025 SceneryAddonsDB</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +21,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
     <PackageReference Include="MongoDB.Entities" Version="24.1.1" />
+    <PackageReference Include="MonoTorrent" Version="3.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="9.0.0" />
   </ItemGroup>
 
 </Project>

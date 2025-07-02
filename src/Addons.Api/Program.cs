@@ -41,6 +41,12 @@ builder.Services.AddApplicationServices();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddSingleton<MongoDbDockerService>();
 
+// Add download services
+builder.Services.AddHttpClient<DownloadableAddonScraperService>();
+builder.Services.AddSingleton<TorrentDownloadService>();
+builder.Services.AddSingleton<DownloadableAddonScraperService>();
+builder.Services.AddSingleton<DownloadManagerService>();
+
 var app = builder.Build();
 
 // Ensure MongoDB is available (Docker container or existing instance)
