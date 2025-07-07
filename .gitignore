@@ -364,7 +364,7 @@ Downloads/
 *.rar
 *.7z
 *.tar.gz
+*.zip
 
-# Keep only the final release zip
-SceneryAddonsDB-Release.zip
-!SceneryAddonsDB-v*.zip
+# Exclude all zip files from commits
+*.zip
