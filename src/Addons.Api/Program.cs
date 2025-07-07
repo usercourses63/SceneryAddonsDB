@@ -1,5 +1,6 @@
 using Addons.Api.Extensions;
 using Addons.Api.Services;
+using Addons.Api.Hubs;
 using MongoDB.Entities;
 using System.Reflection;
 
@@ -7,6 +8,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+
+// Add CORS support for frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add Swagger/OpenAPI services
 builder.Services.AddEndpointsApiExplorer();
@@ -46,6 +62,9 @@ builder.Services.AddHttpClient<DownloadableAddonScraperService>();
 builder.Services.AddSingleton<TorrentDownloadService>();
 builder.Services.AddSingleton<DownloadableAddonScraperService>();
 builder.Services.AddSingleton<DownloadManagerService>();
+
+// Add SignalR notification service
+builder.Services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
 
 var app = builder.Build();
 
@@ -101,8 +120,14 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     });
 }
 
+// Enable CORS
+app.UseCors("AllowFrontend");
+
 app.UseRouting();
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<DownloadProgressHub>("/downloadProgressHub");
 
 // Add a redirect from root to Swagger UI
 app.MapGet("/", () => Results.Redirect("/swagger"))

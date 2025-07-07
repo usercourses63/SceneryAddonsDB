@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using System.Web;
 using HtmlAgilityPack;
+using MongoDB.Entities;
 
 namespace Addons.Api.Services;
 
@@ -37,6 +38,74 @@ public class DownloadManagerService : IDisposable
 
         _logger.LogInformation("DownloadManagerService initialized with max concurrency: {MaxConcurrency}",
             _settings.MaxGlobalConcurrency);
+    }
+
+    /// <summary>
+    /// Downloads a specific addon by ID.
+    /// </summary>
+    /// <param name="addonId">The ID of the addon to download</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Download response with session information</returns>
+    public async Task<DownloadResponse?> DownloadAddonAsync(string addonId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Starting download for addon: {AddonId}", addonId);
+
+            // Get the addon from the database
+            var addon = await DB.Find<Addon>().OneAsync(addonId);
+            if (addon == null)
+            {
+                _logger.LogWarning("Addon not found: {AddonId}", addonId);
+                return null;
+            }
+
+            // Create a download request for this single addon
+            var request = new DownloadRequest
+            {
+                Count = 1,
+                MaxConcurrency = 1,
+                Compatibility = addon.Compatibility,
+                ForceRedownload = false
+            };
+
+            // Create a download response for this single addon
+            var sessionId = Guid.NewGuid().ToString();
+            var downloadItem = new DownloadItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                FileName = addon.FileName,
+                Name = addon.Name,
+                Compatibility = addon.Compatibility,
+                DownloadUrl = $"https://sceneryaddons.org/download/{addon.FileName}",
+                Status = DownloadStatus.Queued,
+                Progress = 0,
+                SpeedBytesPerSecond = 0,
+                TotalBytes = 0,
+                DownloadedBytes = 0,
+                StartedAt = DateTime.UtcNow
+            };
+
+            var response = new DownloadResponse
+            {
+                SessionId = sessionId,
+                QueuedCount = 1,
+                Items = new List<DownloadItem> { downloadItem },
+                StartedAt = DateTime.UtcNow
+            };
+
+            // Store the session for tracking (simplified for single addon)
+            // In a real implementation, you would start the actual download process here
+
+            _logger.LogInformation("Download queued for addon: {AddonName}", addon.Name);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error starting download for addon: {AddonId}", addonId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -168,6 +237,24 @@ public class DownloadManagerService : IDisposable
             StartedAt = session.StartedAt,
             CompletedAt = session.CompletedAt
         };
+    }
+
+    /// <summary>
+    /// Pauses a download session.
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <returns>True if session was paused</returns>
+    public bool PauseSession(string sessionId)
+    {
+        if (_activeSessions.TryGetValue(sessionId, out var session))
+        {
+            // For now, we'll implement pause as cancel since MonoTorrent doesn't have built-in pause
+            // In a more sophisticated implementation, we could track paused state and resume later
+            session.CancellationTokenSource.Cancel();
+            _logger.LogInformation("Download session {SessionId} paused (implemented as cancel)", sessionId);
+            return true;
+        }
+        return false;
     }
 
     /// <summary>

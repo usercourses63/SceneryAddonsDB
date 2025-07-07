@@ -11,6 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Addons.Api.Tests", "src\Add
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Addons.Console", "src\Addons.Console\Addons.Console.csproj", "{23E07225-42B5-47D3-BEB9-800DB05FAD06}"
 EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +58,7 @@ Global
 		{23E07225-42B5-47D3-BEB9-800DB05FAD06}.Release|x64.Build.0 = Release|Any CPU
 		{23E07225-42B5-47D3-BEB9-800DB05FAD06}.Release|x86.ActiveCfg = Release|Any CPU
 		{23E07225-42B5-47D3-BEB9-800DB05FAD06}.Release|x86.Build.0 = Release|Any CPU
+
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,5 +67,6 @@ Global
 		{36E912D7-FCFB-4BC2-82CE-20BB8A6517B0} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A56CFE12-2BAE-4AA0-ADA6-39E716D7D38C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{23E07225-42B5-47D3-BEB9-800DB05FAD06} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+
 	EndGlobalSection
 EndGlobal

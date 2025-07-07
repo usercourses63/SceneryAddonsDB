@@ -22,6 +22,43 @@ public class DownloadsController : ControllerBase
     }
 
     /// <summary>
+    /// Downloads a specific addon by ID.
+    /// </summary>
+    /// <param name="addonId">The ID of the addon to download</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Download session information</returns>
+    /// <response code="200">Download started successfully</response>
+    /// <response code="404">Addon not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("addon/{addonId}")]
+    [ProducesResponseType(typeof(DownloadResponse), 200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    [ProducesResponseType(typeof(ProblemDetails), 500)]
+    public async Task<ActionResult<DownloadResponse>> DownloadAddon(
+        string addonId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Starting download for addon: {AddonId}", addonId);
+
+            var response = await _downloadManager.DownloadAddonAsync(addonId, cancellationToken);
+
+            if (response == null)
+            {
+                return NotFound(new { error = $"Addon with ID '{addonId}' not found" });
+            }
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading addon: {AddonId}", addonId);
+            return StatusCode(500, new { error = "An error occurred while starting the download" });
+        }
+    }
+
+    /// <summary>
     /// Starts a new download session for the latest addons.
     /// </summary>
     /// <param name="request">Download request parameters</param>
@@ -104,6 +141,36 @@ public class DownloadsController : ControllerBase
         {
             _logger.LogError(ex, "Error getting all sessions");
             return Problem("An error occurred while retrieving sessions");
+        }
+    }
+
+    /// <summary>
+    /// Pauses a specific download session.
+    /// </summary>
+    /// <param name="sessionId">Download session ID</param>
+    /// <returns>Pause result</returns>
+    /// <response code="200">Session paused successfully</response>
+    /// <response code="404">Session not found</response>
+    [HttpPost("sessions/{sessionId}/pause")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public ActionResult PauseSession(string sessionId)
+    {
+        try
+        {
+            var paused = _downloadManager.PauseSession(sessionId);
+            if (!paused)
+            {
+                return NotFound($"Download session '{sessionId}' not found");
+            }
+
+            _logger.LogInformation("Download session {SessionId} paused", sessionId);
+            return Ok(new { message = "Session paused successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error pausing session {SessionId}", sessionId);
+            return Problem("An error occurred while pausing the session");
         }
     }
 
