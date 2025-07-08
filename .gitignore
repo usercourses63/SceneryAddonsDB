@@ -359,12 +359,24 @@ display-table.ps1
 show-table.ps1
 test-api.bat
 
-# Downloads and large files
+# Downloads and large files - CRITICAL: These can be multi-GB files
 Downloads/
+src/Addons.Api/Downloads/
+src/Addons.Console/Downloads/
 *.rar
 *.7z
 *.tar.gz
 *.zip
+
+# BitTorrent cache files
+cache/
+*.torrent
+*.fastresume
+
+# Published builds and artifacts
+publish/
+publish-final/
+releases/
 
 # Frontend build artifacts (if frontend is added later)
 node_modules/
