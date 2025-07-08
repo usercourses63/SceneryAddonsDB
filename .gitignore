@@ -366,5 +366,11 @@ Downloads/
 *.tar.gz
 *.zip
 
-# Exclude all zip files from commits
-*.zip
+# Frontend build artifacts (if frontend is added later)
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.vite/
+*.tsbuildinfo

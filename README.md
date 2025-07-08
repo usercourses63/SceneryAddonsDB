@@ -2,6 +2,8 @@
 
 A comprehensive .NET 9 Web API for managing, tracking, and **downloading** Microsoft Flight Simulator scenery addons from SceneryAddons.org with **real BitTorrent integration**.
 
+> **Note**: This repository contains the backend API only. For frontend implementation, see the comprehensive UI specification in [`docs/UI-SPECIFICATION.md`](docs/UI-SPECIFICATION.md).
+
 ## 🚀 Features
 
 ### 🎯 Core Features
@@ -242,9 +244,19 @@ SceneryAddonsDB/
 │   └── Addons.Shared/       # Shared models and utilities
 ├── Downloads/               # Downloaded addon files (organized by compatibility)
 ├── tests/                   # Unit and integration tests
-├── docs/                    # Documentation
+├── docs/                    # Documentation and UI specifications
+│   └── UI-SPECIFICATION.md  # Comprehensive frontend specification
 └── scripts/                 # Build and deployment scripts
 ```
+
+### Frontend Development
+This repository contains only the backend API. For frontend implementation:
+
+1. **Read the UI Specification**: See [`docs/UI-SPECIFICATION.md`](docs/UI-SPECIFICATION.md) for comprehensive frontend requirements
+2. **Technology Stack**: React 18 + TypeScript + Vite + Tailwind CSS 4.0
+3. **Design System**: Complete design tokens, components, and layout specifications
+4. **API Integration**: Detailed integration patterns with this backend API
+5. **Responsive Design**: Mobile-first approach with accessibility guidelines
 
 ### Building
 ```bash
