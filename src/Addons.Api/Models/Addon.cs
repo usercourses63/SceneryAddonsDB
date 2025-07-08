@@ -36,6 +36,51 @@ public class Addon : Entity
     /// Timestamp when this record was last updated (UTC).
     /// </summary>
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Author or creator of the addon (optional).
+    /// </summary>
+    public string? Author { get; set; }
+
+    /// <summary>
+    /// Categories this addon belongs to (optional).
+    /// </summary>
+    public List<string>? Categories { get; set; } = new();
+
+    /// <summary>
+    /// File size in bytes (optional).
+    /// </summary>
+    public long? FileSize { get; set; }
+
+    /// <summary>
+    /// Description of the addon (optional).
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Version of the addon (optional).
+    /// </summary>
+    public string? Version { get; set; }
+
+    /// <summary>
+    /// Download URL for the addon (optional).
+    /// </summary>
+    public string? DownloadUrl { get; set; }
+
+    /// <summary>
+    /// Thumbnail or preview image URL (optional).
+    /// </summary>
+    public string? ThumbnailUrl { get; set; }
+
+    /// <summary>
+    /// Download count (optional).
+    /// </summary>
+    public int? DownloadCount { get; set; }
+
+    /// <summary>
+    /// Rating of the addon (optional).
+    /// </summary>
+    public double? Rating { get; set; }
 }
 
 /// <summary>
@@ -186,6 +231,51 @@ public class AddonSummary
     /// Whether this addon was added recently (within last 7 days).
     /// </summary>
     public bool IsRecent { get; set; }
+
+    /// <summary>
+    /// Author or creator of the addon (optional).
+    /// </summary>
+    public string? Author { get; set; }
+
+    /// <summary>
+    /// Categories this addon belongs to (optional).
+    /// </summary>
+    public List<string>? Categories { get; set; }
+
+    /// <summary>
+    /// File size in bytes (optional).
+    /// </summary>
+    public long? FileSize { get; set; }
+
+    /// <summary>
+    /// Description of the addon (optional).
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Version of the addon (optional).
+    /// </summary>
+    public string? Version { get; set; }
+
+    /// <summary>
+    /// Download URL for the addon (optional).
+    /// </summary>
+    public string? DownloadUrl { get; set; }
+
+    /// <summary>
+    /// Thumbnail or preview image URL (optional).
+    /// </summary>
+    public string? ThumbnailUrl { get; set; }
+
+    /// <summary>
+    /// Download count (optional).
+    /// </summary>
+    public int? DownloadCount { get; set; }
+
+    /// <summary>
+    /// Rating of the addon (optional).
+    /// </summary>
+    public double? Rating { get; set; }
 }
 
 /// <summary>

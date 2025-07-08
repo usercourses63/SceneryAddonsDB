@@ -14,6 +14,7 @@ public class TorrentDownloadService : IDisposable
     private readonly ClientEngine _engine;
     private readonly string _baseDownloadPath;
     private readonly List<TorrentManager> _activeTorrents;
+    private readonly Dictionary<string, TorrentManager> _torrentsByMagnetLink;
     private readonly ILogger<TorrentDownloadService> _logger;
 
     public TorrentDownloadService(ILogger<TorrentDownloadService> logger, IConfiguration configuration)
@@ -23,6 +24,7 @@ public class TorrentDownloadService : IDisposable
         Directory.CreateDirectory(_baseDownloadPath);
         
         _activeTorrents = new List<TorrentManager>();
+        _torrentsByMagnetLink = new Dictionary<string, TorrentManager>();
         
         // Configure torrent engine for MonoTorrent 3.0.2
         var engineSettings = new EngineSettings();
@@ -110,10 +112,52 @@ public class TorrentDownloadService : IDisposable
             // Parse magnet link
             var magnet = MagnetLink.Parse(magnetLink);
             
-            // Create torrent manager with torrent settings
-            var torrentSettings = new TorrentSettings();
-            var torrentManager = await _engine.AddAsync(magnet, downloadPath, torrentSettings);
-            _activeTorrents.Add(torrentManager);
+            // Check if this torrent is already managed using magnet link as key
+            TorrentManager torrentManager;
+            if (_torrentsByMagnetLink.TryGetValue(magnetLink, out var existingManager))
+            {
+                _logger.LogInformation("Found existing torrent manager for {FileName}, reusing it", downloadItem.FileName);
+                torrentManager = existingManager;
+                
+                // Update the save path if different
+                if (!torrentManager.SavePath.Equals(downloadPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Moving torrent {FileName} to new path: {Path}", downloadItem.FileName, downloadPath);
+                    await torrentManager.MoveFilesAsync(downloadPath, true);
+                }
+            }
+            else
+            {
+                // Create torrent manager with torrent settings
+                var torrentSettings = new TorrentSettings();
+                try
+                {
+                    torrentManager = await _engine.AddAsync(magnet, downloadPath, torrentSettings);
+                    _activeTorrents.Add(torrentManager);
+                    _torrentsByMagnetLink[magnetLink] = torrentManager;
+                    _logger.LogDebug("Created new torrent manager for {FileName}", downloadItem.FileName);
+                }
+                catch (TorrentException ex) when (ex.Message.Contains("already been registered"))
+                {
+                    _logger.LogWarning("Torrent {FileName} is already registered in engine, checking existing managers", downloadItem.FileName);
+                    
+                    // Try to find an existing manager by checking all active torrents
+                    var foundManager = _activeTorrents.FirstOrDefault(t => t.SavePath == downloadPath);
+                    if (foundManager != null)
+                    {
+                        torrentManager = foundManager;
+                        _torrentsByMagnetLink[magnetLink] = torrentManager;
+                        _logger.LogInformation("Found existing torrent manager by path for {FileName}", downloadItem.FileName);
+                    }
+                    else
+                    {
+                        _logger.LogError("Could not resolve torrent registration conflict for {FileName}", downloadItem.FileName);
+                        downloadItem.Status = DownloadStatus.Failed;
+                        downloadItem.ErrorMessage = "Torrent registration conflict - unable to find existing manager";
+                        return false;
+                    }
+                }
+            }
             
             // Start the download
             await torrentManager.StartAsync();
@@ -243,6 +287,7 @@ public class TorrentDownloadService : IDisposable
             }
         }
         _activeTorrents.Clear();
+        _torrentsByMagnetLink.Clear();
     }
 
     /// <summary>

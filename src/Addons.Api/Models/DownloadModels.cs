@@ -130,6 +130,11 @@ public class DownloadItem
     /// Local file path where addon is saved.
     /// </summary>
     public string? LocalPath { get; set; }
+
+    /// <summary>
+    /// Estimated time remaining in seconds (0 if not downloading or speed is 0).
+    /// </summary>
+    public long EstimatedTimeRemainingSeconds { get; set; }
 }
 
 /// <summary>
@@ -227,6 +232,11 @@ public class DownloadStatusResponse
     /// Session completion time (if finished).
     /// </summary>
     public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// Estimated time remaining for the entire session in seconds (0 if not active or speed is 0).
+    /// </summary>
+    public long EstimatedTimeRemainingSeconds { get; set; }
 }
 
 /// <summary>

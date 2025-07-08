@@ -208,13 +208,42 @@ public class DownloadManagerService : IDisposable
         var failedItems = session.Items.Count(i => i.Status == DownloadStatus.Failed);
         var activeDownloads = session.Items.Count(i => i.Status == DownloadStatus.Downloading);
         
-        var overallProgress = session.Items.Count > 0 
-            ? session.Items.Average(i => i.Progress) 
+        var overallProgress = session.Items.Count > 0
+            ? session.Items.Average(i => i.Progress)
             : 0;
 
         var totalSpeed = session.Items
             .Where(i => i.Status == DownloadStatus.Downloading)
             .Sum(i => i.SpeedBytesPerSecond);
+
+        // Calculate ETA for individual items
+        foreach (var item in session.Items)
+        {
+            if (item.Status == DownloadStatus.Downloading && item.SpeedBytesPerSecond > 0 && item.TotalBytes > 0)
+            {
+                var remainingBytes = item.TotalBytes - item.DownloadedBytes;
+                item.EstimatedTimeRemainingSeconds = (long)(remainingBytes / item.SpeedBytesPerSecond);
+            }
+            else
+            {
+                item.EstimatedTimeRemainingSeconds = 0;
+            }
+        }
+
+        // Calculate session-level ETA
+        long sessionEta = 0;
+        if (totalSpeed > 0)
+        {
+            var totalRemainingBytes = session.Items
+                .Where(i => i.Status == DownloadStatus.Downloading || i.Status == DownloadStatus.Queued)
+                .Where(i => i.TotalBytes > 0)
+                .Sum(i => i.TotalBytes - i.DownloadedBytes);
+            
+            if (totalRemainingBytes > 0)
+            {
+                sessionEta = (long)(totalRemainingBytes / totalSpeed);
+            }
+        }
 
         var status = SessionStatus.Active;
         if (completedItems + failedItems == session.Items.Count)
@@ -233,6 +262,7 @@ public class DownloadManagerService : IDisposable
             ActiveDownloads = activeDownloads,
             OverallProgress = overallProgress,
             TotalSpeedBytesPerSecond = totalSpeed,
+            EstimatedTimeRemainingSeconds = sessionEta,
             Items = session.Items,
             StartedAt = session.StartedAt,
             CompletedAt = session.CompletedAt
@@ -271,6 +301,120 @@ public class DownloadManagerService : IDisposable
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Resumes a download session.
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <returns>True if session was resumed</returns>
+    public bool ResumeSession(string sessionId)
+    {
+        if (_activeSessions.TryGetValue(sessionId, out var session))
+        {
+            // Create new cancellation token source for resumed session
+            session.CancellationTokenSource = new CancellationTokenSource();
+            
+            // Restart downloads for queued items
+            _ = Task.Run(() => ProcessDownloadSessionAsync(session));
+            
+            _logger.LogInformation("Download session {SessionId} resumed", sessionId);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Pauses a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <param name="itemId">Item ID</param>
+    /// <returns>True if item was paused</returns>
+    public bool PauseDownloadItem(string sessionId, string itemId)
+    {
+        if (_activeSessions.TryGetValue(sessionId, out var session))
+        {
+            var item = session.Items.FirstOrDefault(i => i.Id == itemId);
+            if (item != null && item.Status == DownloadStatus.Downloading)
+            {
+                item.Status = DownloadStatus.Queued;
+                _logger.LogInformation("Download item {ItemId} in session {SessionId} paused", itemId, sessionId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Resumes a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <param name="itemId">Item ID</param>
+    /// <returns>True if item was resumed</returns>
+    public bool ResumeDownloadItem(string sessionId, string itemId)
+    {
+        if (_activeSessions.TryGetValue(sessionId, out var session))
+        {
+            var item = session.Items.FirstOrDefault(i => i.Id == itemId);
+            if (item != null && item.Status == DownloadStatus.Queued)
+            {
+                // Restart download for this specific item
+                _ = Task.Run(() => ProcessDownloadItemAsync(item, session.CancellationTokenSource.Token));
+                _logger.LogInformation("Download item {ItemId} in session {SessionId} resumed", itemId, sessionId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Cancels a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <param name="itemId">Item ID</param>
+    /// <returns>True if item was cancelled</returns>
+    public bool CancelDownloadItem(string sessionId, string itemId)
+    {
+        if (_activeSessions.TryGetValue(sessionId, out var session))
+        {
+            var item = session.Items.FirstOrDefault(i => i.Id == itemId);
+            if (item != null && (item.Status == DownloadStatus.Downloading || item.Status == DownloadStatus.Queued))
+            {
+                item.Status = DownloadStatus.Cancelled;
+                item.CompletedAt = DateTime.UtcNow;
+                _logger.LogInformation("Download item {ItemId} in session {SessionId} cancelled", itemId, sessionId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Clears all completed download sessions from history.
+    /// </summary>
+    /// <returns>Number of sessions cleared</returns>
+    public int ClearSessionsHistory()
+    {
+        var completedSessions = _activeSessions.Where(kvp =>
+        {
+            var status = GetSessionStatus(kvp.Key);
+            return status != null && (status.Status == SessionStatus.Completed ||
+                                    status.Status == SessionStatus.CompletedWithErrors ||
+                                    status.Status == SessionStatus.Cancelled);
+        }).ToList();
+
+        int clearedCount = 0;
+        foreach (var sessionKvp in completedSessions)
+        {
+            if (_activeSessions.TryRemove(sessionKvp.Key, out var session))
+            {
+                session.CancellationTokenSource.Dispose();
+                clearedCount++;
+            }
+        }
+
+        _logger.LogInformation("Cleared {Count} completed sessions from history", clearedCount);
+        return clearedCount;
     }
 
     /// <summary>

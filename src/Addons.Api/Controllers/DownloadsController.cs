@@ -205,6 +205,151 @@ public class DownloadsController : ControllerBase
     }
 
     /// <summary>
+    /// Resumes a specific download session.
+    /// </summary>
+    /// <param name="sessionId">Download session ID</param>
+    /// <returns>Resume result</returns>
+    /// <response code="200">Session resumed successfully</response>
+    /// <response code="404">Session not found</response>
+    [HttpPost("sessions/{sessionId}/resume")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public ActionResult ResumeSession(string sessionId)
+    {
+        try
+        {
+            var resumed = _downloadManager.ResumeSession(sessionId);
+            if (!resumed)
+            {
+                return NotFound($"Download session '{sessionId}' not found");
+            }
+
+            _logger.LogInformation("Download session {SessionId} resumed", sessionId);
+            return Ok(new { message = "Session resumed successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resuming session {SessionId}", sessionId);
+            return Problem("An error occurred while resuming the session");
+        }
+    }
+
+    /// <summary>
+    /// Pauses a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Download session ID</param>
+    /// <param name="itemId">Download item ID</param>
+    /// <returns>Pause result</returns>
+    /// <response code="200">Item paused successfully</response>
+    /// <response code="404">Session or item not found</response>
+    [HttpPost("sessions/{sessionId}/items/{itemId}/pause")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public ActionResult PauseDownloadItem(string sessionId, string itemId)
+    {
+        try
+        {
+            var paused = _downloadManager.PauseDownloadItem(sessionId, itemId);
+            if (!paused)
+            {
+                return NotFound($"Download item '{itemId}' not found in session '{sessionId}'");
+            }
+
+            _logger.LogInformation("Download item {ItemId} in session {SessionId} paused", itemId, sessionId);
+            return Ok(new { message = "Download item paused successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error pausing download item {ItemId} in session {SessionId}", itemId, sessionId);
+            return Problem("An error occurred while pausing the download item");
+        }
+    }
+
+    /// <summary>
+    /// Resumes a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Download session ID</param>
+    /// <param name="itemId">Download item ID</param>
+    /// <returns>Resume result</returns>
+    /// <response code="200">Item resumed successfully</response>
+    /// <response code="404">Session or item not found</response>
+    [HttpPost("sessions/{sessionId}/items/{itemId}/resume")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public ActionResult ResumeDownloadItem(string sessionId, string itemId)
+    {
+        try
+        {
+            var resumed = _downloadManager.ResumeDownloadItem(sessionId, itemId);
+            if (!resumed)
+            {
+                return NotFound($"Download item '{itemId}' not found in session '{sessionId}'");
+            }
+
+            _logger.LogInformation("Download item {ItemId} in session {SessionId} resumed", itemId, sessionId);
+            return Ok(new { message = "Download item resumed successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resuming download item {ItemId} in session {SessionId}", itemId, sessionId);
+            return Problem("An error occurred while resuming the download item");
+        }
+    }
+
+    /// <summary>
+    /// Cancels a specific download item.
+    /// </summary>
+    /// <param name="sessionId">Download session ID</param>
+    /// <param name="itemId">Download item ID</param>
+    /// <returns>Cancel result</returns>
+    /// <response code="200">Item cancelled successfully</response>
+    /// <response code="404">Session or item not found</response>
+    [HttpPost("sessions/{sessionId}/items/{itemId}/cancel")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public ActionResult CancelDownloadItem(string sessionId, string itemId)
+    {
+        try
+        {
+            var cancelled = _downloadManager.CancelDownloadItem(sessionId, itemId);
+            if (!cancelled)
+            {
+                return NotFound($"Download item '{itemId}' not found in session '{sessionId}'");
+            }
+
+            _logger.LogInformation("Download item {ItemId} in session {SessionId} cancelled", itemId, sessionId);
+            return Ok(new { message = "Download item cancelled successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling download item {ItemId} in session {SessionId}", itemId, sessionId);
+            return Problem("An error occurred while cancelling the download item");
+        }
+    }
+
+    /// <summary>
+    /// Clears all download sessions history.
+    /// </summary>
+    /// <returns>Clear result</returns>
+    /// <response code="200">Sessions history cleared successfully</response>
+    [HttpDelete("sessions")]
+    [ProducesResponseType(200)]
+    public ActionResult ClearSessionsHistory()
+    {
+        try
+        {
+            var clearedCount = _downloadManager.ClearSessionsHistory();
+            _logger.LogInformation("Cleared {Count} download sessions from history", clearedCount);
+            return Ok(new { message = $"Cleared {clearedCount} sessions from history" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing sessions history");
+            return Problem("An error occurred while clearing sessions history");
+        }
+    }
+
+    /// <summary>
     /// Gets download statistics and metrics.
     /// </summary>
     /// <returns>Download statistics</returns>

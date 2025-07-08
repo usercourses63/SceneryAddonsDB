@@ -155,4 +155,46 @@ public class AddonsController : ControllerBase
             return StatusCode(500, new { error = "An error occurred while retrieving statistics" });
         }
     }
+
+    /// <summary>
+    /// Get distinct authors from the database.
+    /// </summary>
+    /// <returns>List of distinct authors</returns>
+    /// <response code="200">Returns the list of authors</response>
+    [HttpGet("authors")]
+    [ProducesResponseType(typeof(List<string>), 200)]
+    public async Task<IActionResult> GetAuthors()
+    {
+        try
+        {
+            var authors = await _listingService.GetAuthorsAsync();
+            return Ok(authors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving authors");
+            return StatusCode(500, new { error = "An error occurred while retrieving authors" });
+        }
+    }
+
+    /// <summary>
+    /// Get distinct categories from the database.
+    /// </summary>
+    /// <returns>List of distinct categories</returns>
+    /// <response code="200">Returns the list of categories</response>
+    [HttpGet("categories")]
+    [ProducesResponseType(typeof(List<string>), 200)]
+    public async Task<IActionResult> GetCategories()
+    {
+        try
+        {
+            var categories = await _listingService.GetCategoriesAsync();
+            return Ok(categories);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving categories");
+            return StatusCode(500, new { error = "An error occurred while retrieving categories" });
+        }
+    }
 }

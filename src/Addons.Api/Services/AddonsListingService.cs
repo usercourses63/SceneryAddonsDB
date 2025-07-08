@@ -164,6 +164,71 @@ public class AddonsListingService
         }
     }
 
+    /// <summary>
+    /// Gets distinct authors from the database.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of distinct authors.</returns>
+    public async Task<List<string>> GetAuthorsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var authors = await DB.Distinct<Addon, string>()
+                .Property(a => a.Author)
+                .ExecuteAsync();
+
+            // Filter out null, empty, or "Unknown" authors and sort
+            return authors
+                .Where(author => !string.IsNullOrWhiteSpace(author) &&
+                               !author.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(author => author)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving authors");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets distinct categories from the database.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of distinct categories.</returns>
+    public async Task<List<string>> GetCategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // For Categories which is a List<string>, we need to use aggregation to get distinct values
+            var addons = await DB.Find<Addon>()
+                .Match(a => a.Categories != null && a.Categories.Any())
+                .ExecuteAsync();
+
+            var categories = new HashSet<string>();
+            foreach (var addon in addons)
+            {
+                if (addon.Categories != null)
+                {
+                    foreach (var category in addon.Categories)
+                    {
+                        if (!string.IsNullOrWhiteSpace(category))
+                        {
+                            categories.Add(category.Trim());
+                        }
+                    }
+                }
+            }
+
+            return categories.OrderBy(c => c).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving categories");
+            throw;
+        }
+    }
+
     private AddonsListRequest SanitizeRequest(AddonsListRequest request)
     {
         return new AddonsListRequest
@@ -330,7 +395,16 @@ public class AddonsListingService
             DateAdded = addon.DateAdded,
             LastUpdated = addon.LastUpdated,
             DaysSinceAdded = daysSinceAdded,
-            IsRecent = daysSinceAdded <= 7
+            IsRecent = daysSinceAdded <= 7,
+            Author = addon.Author,
+            Categories = addon.Categories,
+            FileSize = addon.FileSize,
+            Description = addon.Description,
+            Version = addon.Version,
+            DownloadUrl = addon.DownloadUrl,
+            ThumbnailUrl = addon.ThumbnailUrl,
+            DownloadCount = addon.DownloadCount,
+            Rating = addon.Rating
         };
     }
 
