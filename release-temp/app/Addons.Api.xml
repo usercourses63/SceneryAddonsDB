@@ -1,0 +1,1748 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Addons.Api</name>
+    </assembly>
+    <members>
+        <member name="T:Addons.Api.BackgroundJobs.ScrapeWorker">
+            <summary>
+            Background service that performs scheduled scraping of addon data.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.#ctor(System.IServiceProvider,Microsoft.Extensions.Logging.ILogger{Addons.Api.BackgroundJobs.ScrapeWorker},Microsoft.AspNetCore.SignalR.IHubContext{Addons.Api.Hubs.DownloadProgressHub})">
+            <summary>
+            Initializes a new instance of the ScrapeWorker.
+            </summary>
+            <param name="serviceProvider">The service provider for creating scoped services.</param>
+            <param name="logger">The logger instance.</param>
+            <param name="hubContext">SignalR hub context for broadcasting status updates.</param>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.ExecuteAsync(System.Threading.CancellationToken)">
+            <summary>
+            Executes the background service.
+            </summary>
+            <param name="stoppingToken">Cancellation token to stop the service.</param>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.PerformScrapeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Performs the scraping operation using scoped services.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.BroadcastScraperStatus">
+            <summary>
+            Broadcasts the current scraper status via SignalR.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.WaitUntilNextHour(System.Threading.CancellationToken)">
+            <summary>
+            Waits until the top of the next hour before starting the first scrape.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+        </member>
+        <member name="M:Addons.Api.BackgroundJobs.ScrapeWorker.TriggerManualScrapeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Triggers a manual scrape operation (for testing or manual refresh).
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the scrape operation.</returns>
+        </member>
+        <member name="T:Addons.Api.Controllers.AddonsController">
+            <summary>
+            Controller for managing scenery addons.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetAddons(Addons.Api.Models.AddonsListRequest,System.Threading.CancellationToken)">
+            <summary>
+            Get all addons with pagination, filtering, and sorting.
+            </summary>
+            <param name="request">The request parameters for listing addons</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>List of addons or table format based on request</returns>
+            <response code="200">Returns the list of addons</response>
+            <response code="400">If the request parameters are invalid</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetLatestAddons(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get the latest addons (most recently added).
+            </summary>
+            <param name="count">Number of latest addons to retrieve (default: 10, max: 50)</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>List of latest addons</returns>
+            <response code="200">Returns the latest addons</response>
+            <response code="400">If the count parameter is invalid</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetCompatibility(System.String)">
+            <summary>
+            Get addon compatibility information by filename.
+            </summary>
+            <param name="fileName">The filename of the addon</param>
+            <returns>Compatibility information for the addon</returns>
+            <response code="200">Returns the addon compatibility information</response>
+            <response code="400">If the filename parameter is missing</response>
+            <response code="404">If the addon is not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetStats">
+            <summary>
+            Get addon statistics.
+            </summary>
+            <returns>Basic statistics about the addon database</returns>
+            <response code="200">Returns the addon statistics</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetAuthors">
+            <summary>
+            Get distinct authors from the database.
+            </summary>
+            <returns>List of distinct authors</returns>
+            <response code="200">Returns the list of authors</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.AddonsController.GetCategories">
+            <summary>
+            Get distinct categories from the database.
+            </summary>
+            <returns>List of distinct categories</returns>
+            <response code="200">Returns the list of categories</response>
+        </member>
+        <member name="T:Addons.Api.Controllers.DownloadsController">
+            <summary>
+            Controller for managing addon downloads.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.DownloadAddon(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Downloads a specific addon by ID.
+            </summary>
+            <param name="addonId">The ID of the addon to download</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>Download session information</returns>
+            <response code="200">Download started successfully</response>
+            <response code="404">Addon not found</response>
+            <response code="500">Internal server error</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.StartDownload(Addons.Api.Models.DownloadRequest,System.Threading.CancellationToken)">
+            <summary>
+            Starts a new download session for the latest addons.
+            </summary>
+            <param name="request">Download request parameters</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>Download session information</returns>
+            <response code="200">Download session started successfully</response>
+            <response code="400">Invalid request parameters</response>
+            <response code="500">Internal server error</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.GetSessionStatus(System.String)">
+            <summary>
+            Gets the status of a specific download session.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <returns>Download session status</returns>
+            <response code="200">Session status retrieved successfully</response>
+            <response code="404">Session not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.GetAllSessions">
+            <summary>
+            Gets the status of all active download sessions.
+            </summary>
+            <returns>List of all active download sessions</returns>
+            <response code="200">Sessions retrieved successfully</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.PauseSession(System.String)">
+            <summary>
+            Pauses a specific download session.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <returns>Pause result</returns>
+            <response code="200">Session paused successfully</response>
+            <response code="404">Session not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.CancelSession(System.String)">
+            <summary>
+            Cancels a specific download session.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <returns>Cancellation result</returns>
+            <response code="200">Session cancelled successfully</response>
+            <response code="404">Session not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.ResumeSession(System.String)">
+            <summary>
+            Resumes a specific download session.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <returns>Resume result</returns>
+            <response code="200">Session resumed successfully</response>
+            <response code="404">Session not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.PauseDownloadItem(System.String,System.String)">
+            <summary>
+            Pauses a specific download item.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <param name="itemId">Download item ID</param>
+            <returns>Pause result</returns>
+            <response code="200">Item paused successfully</response>
+            <response code="404">Session or item not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.ResumeDownloadItem(System.String,System.String)">
+            <summary>
+            Resumes a specific download item.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <param name="itemId">Download item ID</param>
+            <returns>Resume result</returns>
+            <response code="200">Item resumed successfully</response>
+            <response code="404">Session or item not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.CancelDownloadItem(System.String,System.String)">
+            <summary>
+            Cancels a specific download item.
+            </summary>
+            <param name="sessionId">Download session ID</param>
+            <param name="itemId">Download item ID</param>
+            <returns>Cancel result</returns>
+            <response code="200">Item cancelled successfully</response>
+            <response code="404">Session or item not found</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.ClearSessionsHistory">
+            <summary>
+            Clears all download sessions history.
+            </summary>
+            <returns>Clear result</returns>
+            <response code="200">Sessions history cleared successfully</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.GetDownloadStats">
+            <summary>
+            Gets download statistics and metrics.
+            </summary>
+            <returns>Download statistics</returns>
+            <response code="200">Statistics retrieved successfully</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.DownloadsController.GetDownloadFolders">
+            <summary>
+            Gets available download folders organized by compatibility.
+            </summary>
+            <returns>List of download folders and their contents</returns>
+            <response code="200">Folders retrieved successfully</response>
+        </member>
+        <member name="T:Addons.Api.Controllers.DownloadStats">
+            <summary>
+            Download statistics model.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.ActiveSessions">
+            <summary>
+            Number of active download sessions.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.TotalSessions">
+            <summary>
+            Total number of download sessions.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.TotalDownloads">
+            <summary>
+            Total number of downloads across all sessions.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.CompletedDownloads">
+            <summary>
+            Number of completed downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.FailedDownloads">
+            <summary>
+            Number of failed downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.ActiveDownloads">
+            <summary>
+            Number of currently active downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadStats.TotalSpeedBytesPerSecond">
+            <summary>
+            Combined download speed across all active downloads.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Controllers.DownloadFolder">
+            <summary>
+            Download folder information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadFolder.Name">
+            <summary>
+            Folder name (compatibility).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadFolder.Path">
+            <summary>
+            Full folder path.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadFolder.FileCount">
+            <summary>
+            Number of files in folder.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadFolder.TotalSize">
+            <summary>
+            Total size of all files in bytes.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadFolder.Files">
+            <summary>
+            List of files in the folder.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Controllers.DownloadedFile">
+            <summary>
+            Downloaded file information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadedFile.FileName">
+            <summary>
+            File name.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadedFile.FilePath">
+            <summary>
+            Full file path.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadedFile.FileSize">
+            <summary>
+            File size in bytes.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Controllers.DownloadedFile.CreatedAt">
+            <summary>
+            File creation timestamp.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Controllers.HealthController">
+            <summary>
+            Controller for health check endpoints.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.HealthController.GetHealth">
+            <summary>
+            Health check endpoint.
+            </summary>
+            <returns>Health status of the API</returns>
+            <response code="200">Returns the health status</response>
+        </member>
+        <member name="T:Addons.Api.Controllers.ImagesController">
+            <summary>
+            Controller for serving addon images.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.ImagesController.#ctor(Microsoft.Extensions.Logging.ILogger{Addons.Api.Controllers.ImagesController})">
+            <summary>
+            Initializes a new instance of the ImagesController.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.ImagesController.GetAddonImage(System.String)">
+            <summary>
+            Gets an addon image by addon ID.
+            </summary>
+            <param name="addonId">The addon ID</param>
+            <returns>The image file</returns>
+        </member>
+        <member name="M:Addons.Api.Controllers.ImagesController.GetAddonThumbnail(System.String,System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Gets an addon thumbnail by addon ID.
+            </summary>
+            <param name="addonId">The addon ID</param>
+            <param name="width">Optional width for thumbnail</param>
+            <param name="height">Optional height for thumbnail</param>
+            <returns>The thumbnail image</returns>
+        </member>
+        <member name="M:Addons.Api.Controllers.ImagesController.GetAddonImageByFilename(System.String)">
+            <summary>
+            Gets addon image by filename (for backwards compatibility).
+            </summary>
+            <param name="filename">The addon filename</param>
+            <returns>The image file</returns>
+        </member>
+        <member name="T:Addons.Api.Controllers.ReportsController">
+            <summary>
+            Controller for application reports and status information.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.ReportsController.GetStatusReport">
+            <summary>
+            Get comprehensive application status and addon check report.
+            </summary>
+            <returns>Detailed application status report</returns>
+            <response code="200">Returns the application status report</response>
+            <response code="500">Internal server error while generating report</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.ReportsController.DisplayStatusToConsole">
+            <summary>
+            Display application status report to console only.
+            </summary>
+            <returns>Confirmation that report was displayed to console</returns>
+            <response code="200">Report displayed to console successfully</response>
+            <response code="500">Internal server error while generating report</response>
+        </member>
+        <member name="T:Addons.Api.Controllers.ScraperController">
+            <summary>
+            Controller for scraper operations.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.ScraperController.TriggerRefresh(System.String)">
+            <summary>
+            Manually trigger a scrape operation.
+            </summary>
+            <param name="token">Authentication token from X-Refresh-Token header</param>
+            <returns>Result of the scrape operation</returns>
+            <response code="200">Scrape operation completed successfully</response>
+            <response code="401">Unauthorized - invalid or missing token</response>
+            <response code="500">Internal server error during scrape operation</response>
+            <response code="501">Not implemented - no refresh token configured</response>
+        </member>
+        <member name="M:Addons.Api.Controllers.ScraperController.ClearDatabase(System.String)">
+            <summary>
+            Clear all addons from the database.
+            </summary>
+            <param name="token">Authentication token from X-Refresh-Token header</param>
+            <returns>Result of the cleanup operation</returns>
+            <response code="200">Database cleanup completed successfully</response>
+            <response code="401">Unauthorized - invalid or missing token</response>
+            <response code="500">Internal server error during cleanup operation</response>
+            <response code="501">Not implemented - no refresh token configured</response>
+        </member>
+        <member name="T:Addons.Api.Controllers.ScraperStatusController">
+            <summary>
+            Controller for scraper status operations.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Controllers.ScraperStatusController.GetScraperStatus">
+            <summary>
+            Get the current scraper status.
+            </summary>
+            <returns>Current scraper status</returns>
+        </member>
+        <member name="T:Addons.Api.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for configuring services in the DI container.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Extensions.ServiceCollectionExtensions.AddMongoDb(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configures MongoDB using MongoDB.Entities.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configuration">The application configuration.</param>
+            <returns>The service collection for chaining.</returns>
+        </member>
+        <member name="M:Addons.Api.Extensions.ServiceCollectionExtensions.AddApplicationServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Configures application services including scraper and background jobs.
+            </summary>
+            <param name="services">The service collection.</param>
+            <returns>The service collection for chaining.</returns>
+        </member>
+        <member name="T:Addons.Api.Hubs.DownloadProgressHub">
+            <summary>
+            SignalR hub for real-time download progress updates
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.OnConnectedAsync">
+            <summary>
+            Called when a client connects to the hub
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.OnDisconnectedAsync(System.Exception)">
+            <summary>
+            Called when a client disconnects from the hub
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.JoinSessionGroup(System.String)">
+            <summary>
+            Allows clients to join a specific download session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.LeaveSessionGroup(System.String)">
+            <summary>
+            Allows clients to leave a specific download session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendProgressUpdate(System.String,Addons.Api.Models.DownloadStatusResponse)">
+            <summary>
+            Sends progress update to all clients in a session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendSessionCompleted(System.String)">
+            <summary>
+            Sends session completion notification to all clients in a session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendSessionCancelled(System.String)">
+            <summary>
+            Sends session cancellation notification to all clients in a session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendSessionFailed(System.String,System.String)">
+            <summary>
+            Sends session failure notification to all clients in a session group
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendGlobalNotification(System.Object)">
+            <summary>
+            Sends global notification to all connected clients
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendStatsUpdate(System.Object)">
+            <summary>
+            Sends statistics update to all connected clients
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendScraperStatusUpdate(System.Object)">
+            <summary>
+            Sends scraper status update to all connected clients
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendNewAddonNotification(System.Object)">
+            <summary>
+            Sends new addon notification to all connected clients
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendBatchCommitNotification(System.Object)">
+            <summary>
+            Sends database batch commit notification to all connected clients
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Hubs.DownloadProgressHub.SendSystemMetricsUpdate(System.Object)">
+            <summary>
+            Sends system metrics update to all connected clients
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Hubs.ISignalRNotificationService">
+            <summary>
+            Service for sending SignalR notifications from other parts of the application
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Hubs.SignalRNotificationService">
+            <summary>
+            Implementation of SignalR notification service
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.Addon">
+            <summary>
+            Represents a scenery addon with compatibility information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.FileName">
+            <summary>
+            The exact .rar archive filename (unique identifier).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Name">
+            <summary>
+            Full addon title and version.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Compatibility">
+            <summary>
+            Compatibility information - one of: "MSFS 2020", "MSFS 2024", or "MSFS 2020/2024".
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.DateAdded">
+            <summary>
+            Date when the addon was added to the master list (UTC).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.LastUpdated">
+            <summary>
+            Timestamp when this record was last updated (UTC).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Author">
+            <summary>
+            Author or creator of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Categories">
+            <summary>
+            Categories this addon belongs to (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.FileSize">
+            <summary>
+            File size in bytes (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Description">
+            <summary>
+            Description of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Version">
+            <summary>
+            Version of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.DownloadUrl">
+            <summary>
+            Download URL for the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.ThumbnailUrl">
+            <summary>
+            Thumbnail or preview image URL (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.ImageData">
+            <summary>
+            Image data stored as Base64 string (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.ImageContentType">
+            <summary>
+            Image content type (e.g., "image/jpeg", "image/png") (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.DownloadCount">
+            <summary>
+            Download count (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.Addon.Rating">
+            <summary>
+            Rating of the addon (optional).
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.CompatibilityResponse">
+            <summary>
+            Response model for the compatibility API endpoint.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.CompatibilityResponse.FileName">
+            <summary>
+            The exact .rar archive filename.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.CompatibilityResponse.Compatibility">
+            <summary>
+            Compatibility information.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.HealthResponse">
+            <summary>
+            Health check response model.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.HealthResponse.Status">
+            <summary>
+            Health status indicator.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.HealthResponse.Timestamp">
+            <summary>
+            Timestamp of the health check.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonsListRequest">
+            <summary>
+            Request model for listing addons with pagination and filtering.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.Page">
+            <summary>
+            Page number (1-based).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.PageSize">
+            <summary>
+            Number of items per page (max 100).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.SortBy">
+            <summary>
+            Sort field: "name", "dateAdded", "lastUpdated", "compatibility".
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.SortDirection">
+            <summary>
+            Sort direction: "asc" or "desc".
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.Compatibility">
+            <summary>
+            Filter by compatibility (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.Search">
+            <summary>
+            Search term for addon name (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.AddedAfter">
+            <summary>
+            Filter by date added after this date (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.AddedBefore">
+            <summary>
+            Filter by date added before this date (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListRequest.Format">
+            <summary>
+            Display format: "list" (default) or "table".
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonsListResponse">
+            <summary>
+            Response model for listing addons.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListResponse.Addons">
+            <summary>
+            List of addons for the current page.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListResponse.Pagination">
+            <summary>
+            Pagination information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsListResponse.Summary">
+            <summary>
+            Summary statistics.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonSummary">
+            <summary>
+            Addon summary for list display.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Id">
+            <summary>
+            MongoDB document identifier.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.FileName">
+            <summary>
+            The exact .rar archive filename.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Name">
+            <summary>
+            Full addon title and version.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Compatibility">
+            <summary>
+            Compatibility information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.DateAdded">
+            <summary>
+            Date when the addon was added (UTC).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.LastUpdated">
+            <summary>
+            Last updated timestamp (UTC).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.DaysSinceAdded">
+            <summary>
+            Days since the addon was added.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.IsRecent">
+            <summary>
+            Whether this addon was added recently (within last 7 days).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Author">
+            <summary>
+            Author or creator of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Categories">
+            <summary>
+            Categories this addon belongs to (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.FileSize">
+            <summary>
+            File size in bytes (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Description">
+            <summary>
+            Description of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Version">
+            <summary>
+            Version of the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.DownloadUrl">
+            <summary>
+            Download URL for the addon (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.ThumbnailUrl">
+            <summary>
+            Thumbnail or preview image URL (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.ImageData">
+            <summary>
+            Image data stored as Base64 string (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.ImageContentType">
+            <summary>
+            Image content type (e.g., "image/jpeg", "image/png") (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.DownloadCount">
+            <summary>
+            Download count (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonSummary.Rating">
+            <summary>
+            Rating of the addon (optional).
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.PaginationInfo">
+            <summary>
+            Pagination information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.CurrentPage">
+            <summary>
+            Current page number.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.PageSize">
+            <summary>
+            Number of items per page.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.TotalItems">
+            <summary>
+            Total number of items.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.TotalPages">
+            <summary>
+            Total number of pages.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.HasPrevious">
+            <summary>
+            Whether there is a previous page.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.PaginationInfo.HasNext">
+            <summary>
+            Whether there is a next page.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonsSummaryStats">
+            <summary>
+            Summary statistics for the addon collection.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.TotalAddons">
+            <summary>
+            Total number of addons in the database.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.FilteredAddons">
+            <summary>
+            Number of addons matching current filters.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.RecentAddons">
+            <summary>
+            Number of addons added in the last 7 days.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.CompatibilityBreakdown">
+            <summary>
+            Breakdown by compatibility.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.LatestAddedDate">
+            <summary>
+            Date of the most recently added addon.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsSummaryStats.OldestAddedDate">
+            <summary>
+            Date of the oldest addon.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonsTableResponse">
+            <summary>
+            Table view response for addons listing.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsTableResponse.Headers">
+            <summary>
+            Table headers.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsTableResponse.Rows">
+            <summary>
+            Table rows with addon data.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsTableResponse.Pagination">
+            <summary>
+            Pagination information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonsTableResponse.Summary">
+            <summary>
+            Summary statistics.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.AddonTableRow">
+            <summary>
+            Minimal addon data for table display.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonTableRow.FileName">
+            <summary>
+            The exact .rar archive filename.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonTableRow.Name">
+            <summary>
+            Shortened addon name (first 50 characters).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonTableRow.Compatibility">
+            <summary>
+            Compatibility information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonTableRow.DateAdded">
+            <summary>
+            Date when the addon was added (formatted).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.AddonTableRow.DaysAgo">
+            <summary>
+            Days since the addon was added.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadRequest">
+            <summary>
+            Request model for starting downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadRequest.Count">
+            <summary>
+            Number of latest addons to download (1-50).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadRequest.MaxConcurrency">
+            <summary>
+            Maximum concurrent downloads (1-10).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadRequest.Compatibility">
+            <summary>
+            Filter by compatibility (optional).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadRequest.ForceRedownload">
+            <summary>
+            Whether to force re-download existing files.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadResponse">
+            <summary>
+            Response model for download operations.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadResponse.SessionId">
+            <summary>
+            Unique download session ID.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadResponse.QueuedCount">
+            <summary>
+            Number of addons queued for download.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadResponse.Items">
+            <summary>
+            List of addons in the download queue.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadResponse.StartedAt">
+            <summary>
+            Timestamp when download session started.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadItem">
+            <summary>
+            Individual download item information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.Id">
+            <summary>
+            Unique item ID.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.FileName">
+            <summary>
+            Addon file name.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.Name">
+            <summary>
+            Addon display name.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.Compatibility">
+            <summary>
+            Compatibility (MSFS 2020, MSFS 2024, MSFS 2020/2024).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.DownloadUrl">
+            <summary>
+            Download URL (magnet link).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.Status">
+            <summary>
+            Current download status.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.Progress">
+            <summary>
+            Download progress percentage (0-100).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.SpeedBytesPerSecond">
+            <summary>
+            Download speed in bytes per second.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.TotalBytes">
+            <summary>
+            Total file size in bytes.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.DownloadedBytes">
+            <summary>
+            Downloaded bytes.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.ErrorMessage">
+            <summary>
+            Error message if download failed.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.StartedAt">
+            <summary>
+            Timestamp when download started.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.CompletedAt">
+            <summary>
+            Timestamp when download completed.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.LocalPath">
+            <summary>
+            Local file path where addon is saved.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadItem.EstimatedTimeRemainingSeconds">
+            <summary>
+            Estimated time remaining in seconds (0 if not downloading or speed is 0).
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadStatus">
+            <summary>
+            Download status enumeration.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Queued">
+            <summary>
+            Waiting in queue.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Downloading">
+            <summary>
+            Currently downloading.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Completed">
+            <summary>
+            Download completed successfully.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Failed">
+            <summary>
+            Download failed.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Cancelled">
+            <summary>
+            Download was cancelled.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.DownloadStatus.Skipped">
+            <summary>
+            File already exists (skipped).
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadStatusResponse">
+            <summary>
+            Download session status response.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.SessionId">
+            <summary>
+            Session ID.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.Status">
+            <summary>
+            Overall session status.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.TotalItems">
+            <summary>
+            Total number of items in session.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.CompletedItems">
+            <summary>
+            Number of completed downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.FailedItems">
+            <summary>
+            Number of failed downloads.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.ActiveDownloads">
+            <summary>
+            Number of currently downloading items.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.OverallProgress">
+            <summary>
+            Overall progress percentage.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.TotalSpeedBytesPerSecond">
+            <summary>
+            Combined download speed.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.Items">
+            <summary>
+            List of all download items.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.StartedAt">
+            <summary>
+            Session start time.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.CompletedAt">
+            <summary>
+            Session completion time (if finished).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadStatusResponse.EstimatedTimeRemainingSeconds">
+            <summary>
+            Estimated time remaining for the entire session in seconds (0 if not active or speed is 0).
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.SessionStatus">
+            <summary>
+            Session status enumeration.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.SessionStatus.Active">
+            <summary>
+            Session is active with downloads in progress.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.SessionStatus.Completed">
+            <summary>
+            All downloads completed successfully.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.SessionStatus.CompletedWithErrors">
+            <summary>
+            Session completed with some failures.
+            </summary>
+        </member>
+        <member name="F:Addons.Api.Models.SessionStatus.Cancelled">
+            <summary>
+            Session was cancelled.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Models.DownloadSettings">
+            <summary>
+            Download configuration settings.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadSettings.BaseDownloadPath">
+            <summary>
+            Base download directory.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadSettings.MaxGlobalConcurrency">
+            <summary>
+            Maximum concurrent downloads globally.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadSettings.DownloadTimeoutMinutes">
+            <summary>
+            Download timeout in minutes.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadSettings.OrganizeByCompatibility">
+            <summary>
+            Whether to organize files by compatibility.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Models.DownloadSettings.SkipExistingFiles">
+            <summary>
+            Whether to skip existing files.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.AddonsListingService">
+            <summary>
+            Service for listing and filtering addons.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.AddonsListingService.GetAddonsAsync(Addons.Api.Models.AddonsListRequest,System.Threading.CancellationToken)">
+            <summary>
+            Gets a paginated list of addons with filtering and sorting.
+            </summary>
+            <param name="request">The request parameters.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The paginated addon list response or table response based on format.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonsListingService.GetLatestAddonsAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Gets the latest addons (most recently added).
+            </summary>
+            <param name="count">Number of latest addons to retrieve.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>List of latest addons.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonsListingService.GetAuthorsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets distinct authors from the database.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>List of distinct authors.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonsListingService.GetCategoriesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets distinct categories from the database.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>List of distinct categories.</returns>
+        </member>
+        <member name="T:Addons.Api.Services.AddonUpdaterService">
+            <summary>
+            Service responsible for updating addon records in MongoDB.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.#ctor(Microsoft.Extensions.Logging.ILogger{Addons.Api.Services.AddonUpdaterService},Addons.Api.Hubs.ISignalRNotificationService)">
+            <summary>
+            Initializes a new instance of the AddonUpdaterService.
+            </summary>
+            <param name="logger">The logger instance.</param>
+            <param name="signalRService">The SignalR notification service.</param>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.UpdateAddonsAsync(System.Collections.Generic.IEnumerable{Addons.Api.Models.Addon},System.Int32)">
+            <summary>
+            Updates or inserts addon records in the database.
+            </summary>
+            <param name="addons">The list of addons to update.</param>
+            <param name="batchSize">Number of addons to process before committing to database (default: 10)</param>
+            <returns>A summary of the update operation.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.GetAddonByFileNameAsync(System.String)">
+            <summary>
+            Retrieves an addon by its filename.
+            </summary>
+            <param name="fileName">The exact filename to search for.</param>
+            <returns>The addon if found, null otherwise.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.GetTotalAddonCountAsync">
+            <summary>
+            Gets the total count of addons in the database.
+            </summary>
+            <returns>The total number of addon records.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.CommitBatchAsync(System.Collections.Generic.List{Addons.Api.Models.Addon})">
+            <summary>
+            Commits a batch of addons to the database.
+            </summary>
+            <param name="batch">The batch of addons to commit.</param>
+        </member>
+        <member name="M:Addons.Api.Services.AddonUpdaterService.ClearAllAddonsAsync">
+            <summary>
+            Clears all addons from the database.
+            </summary>
+            <returns>The number of addons that were deleted.</returns>
+        </member>
+        <member name="T:Addons.Api.Services.UpdateSummary">
+            <summary>
+            Summary of an update operation.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.UpdateSummary.NewCount">
+            <summary>
+            Number of new records inserted.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.UpdateSummary.UpdatedCount">
+            <summary>
+            Number of existing records updated.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.UpdateSummary.UnchangedCount">
+            <summary>
+            Number of records that remained unchanged.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.UpdateSummary.FailedCount">
+            <summary>
+            Number of records that failed to update.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.UpdateSummary.TotalProcessed">
+            <summary>
+            Total number of records processed.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.DownloadableAddonScraperService">
+            <summary>
+            Service for scraping addons with download URLs from sceneryaddons.org.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.ScrapeDownloadableAddonsAsync(System.Int32,System.String)">
+            <summary>
+            Scrapes the latest addons with download URLs.
+            </summary>
+            <param name="count">Number of addons to scrape</param>
+            <param name="compatibilityFilter">Optional compatibility filter</param>
+            <returns>List of downloadable addon information</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.ParseAddonArticleAsync(HtmlAgilityPack.HtmlNode)">
+            <summary>
+            Parses an addon article from the HTML.
+            </summary>
+            <param name="article">HTML article element</param>
+            <returns>DownloadableAddonInfo object or null if parsing fails</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.GetAddonDetailsFromPageAsync(System.String)">
+            <summary>
+            Gets the download URL and image URL from an addon page.
+            </summary>
+            <param name="addonPageUrl">URL of the addon page</param>
+            <returns>Tuple of (downloadUrl, imageUrl)</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.GetDownloadUrlFromDocument(HtmlAgilityPack.HtmlDocument,System.String)">
+            <summary>
+            Extracts download URL from the HTML document.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.GetImageUrlFromDocument(HtmlAgilityPack.HtmlDocument)">
+            <summary>
+            Extracts image URL from the HTML document.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadableAddonScraperService.GenerateFileName(System.String,System.String)">
+            <summary>
+            Generates a filename from addon name and download URL.
+            </summary>
+            <param name="addonName">Addon name</param>
+            <param name="downloadUrl">Download URL</param>
+            <returns>Generated filename</returns>
+        </member>
+        <member name="T:Addons.Api.Services.DownloadableAddonInfo">
+            <summary>
+            Downloadable addon information.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.Name">
+            <summary>
+            Addon name.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.FileName">
+            <summary>
+            Generated filename.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.Compatibility">
+            <summary>
+            Compatibility (MSFS 2020, MSFS 2024, MSFS 2020/2024).
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.DownloadUrl">
+            <summary>
+            Download URL.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.DateAdded">
+            <summary>
+            Date when addon was added.
+            </summary>
+        </member>
+        <member name="P:Addons.Api.Services.DownloadableAddonInfo.ThumbnailUrl">
+            <summary>
+            Thumbnail or preview image URL.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.DownloadManagerService">
+            <summary>
+            Service for managing concurrent addon downloads.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.DownloadAddonAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Downloads a specific addon by ID.
+            </summary>
+            <param name="addonId">The ID of the addon to download</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>Download response with session information</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.StartDownloadSessionAsync(Addons.Api.Models.DownloadRequest,System.Threading.CancellationToken)">
+            <summary>
+            Starts a new download session.
+            </summary>
+            <param name="request">Download request</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>Download response with session information</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.GetSessionStatus(System.String)">
+            <summary>
+            Gets the status of a download session.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <returns>Download status response</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.PauseSession(System.String)">
+            <summary>
+            Pauses a download session.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <returns>True if session was paused</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.CancelSession(System.String)">
+            <summary>
+            Cancels a download session.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <returns>True if session was cancelled</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ResumeSession(System.String)">
+            <summary>
+            Resumes a download session.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <returns>True if session was resumed</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.PauseDownloadItem(System.String,System.String)">
+            <summary>
+            Pauses a specific download item.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <param name="itemId">Item ID</param>
+            <returns>True if item was paused</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ResumeDownloadItem(System.String,System.String)">
+            <summary>
+            Resumes a specific download item.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <param name="itemId">Item ID</param>
+            <returns>True if item was resumed</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.CancelDownloadItem(System.String,System.String)">
+            <summary>
+            Cancels a specific download item.
+            </summary>
+            <param name="sessionId">Session ID</param>
+            <param name="itemId">Item ID</param>
+            <returns>True if item was cancelled</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ClearSessionsHistory">
+            <summary>
+            Clears all completed download sessions from history.
+            </summary>
+            <returns>Number of sessions cleared</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.GetAllSessions">
+            <summary>
+            Gets all active download sessions.
+            </summary>
+            <returns>List of active sessions</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ProcessDownloadSessionAsync(Addons.Api.Services.DownloadSession)">
+            <summary>
+            Processes a download session with concurrent downloads.
+            </summary>
+            <param name="session">Download session</param>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ProcessDownloadItemAsync(Addons.Api.Models.DownloadItem,System.Threading.CancellationToken)">
+            <summary>
+            Processes a single download item.
+            </summary>
+            <param name="item">Download item</param>
+            <param name="cancellationToken">Cancellation token</param>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.ScrapeLatestAddonsAsync(System.Int32,System.String)">
+            <summary>
+            Scrapes latest addons from sceneryaddons.org.
+            </summary>
+            <param name="count">Number of addons to scrape</param>
+            <param name="compatibilityFilter">Optional compatibility filter</param>
+            <returns>List of addon information</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.GetCompatibilityFolder(System.String)">
+            <summary>
+            Gets the appropriate folder name for compatibility.
+            </summary>
+            <param name="compatibility">Compatibility string</param>
+            <returns>Folder name</returns>
+        </member>
+        <member name="M:Addons.Api.Services.DownloadManagerService.Dispose">
+            <summary>
+            Disposes the download manager.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.DownloadSession">
+            <summary>
+            Internal download session class.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.AddonInfo">
+            <summary>
+            Simplified addon info for scraping.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.MongoDbDockerService">
+            <summary>
+            Service for managing MongoDB Docker container.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.EnsureMongoDbRunningAsync">
+            <summary>
+            Ensures MongoDB is available (either via Docker container or existing instance).
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.IsMongoDbAccessibleAsync">
+            <summary>
+            Checks if MongoDB is accessible on the default port.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.IsDockerAvailableAsync">
+            <summary>
+            Checks if Docker is available on the system.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.GetContainerStatusAsync">
+            <summary>
+            Gets the status of the MongoDB container.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.CreateAndStartContainerAsync">
+            <summary>
+            Creates and starts the MongoDB container.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.StartContainerAsync">
+            <summary>
+            Starts an existing MongoDB container.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.MongoDbDockerService.RunDockerCommandAsync(System.String)">
+            <summary>
+            Runs a Docker command and returns the result.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.MongoDbInitializationService">
+            <summary>
+            Service to initialize MongoDB.Entities connection.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.ReportService">
+            <summary>
+            Service for generating application status and addon reports.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ReportService.GenerateStatusReportAsync">
+            <summary>
+            Generates a comprehensive application status and addon check report.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ReportService.DisplayReportToConsole(Addons.Api.Services.ApplicationStatusReport)">
+            <summary>
+            Displays the status report to the console with formatting.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.ApplicationStatusReport">
+            <summary>
+            Application status report model.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.AddonSummaryForReport">
+            <summary>
+            Addon summary for reports.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.ScraperService">
+            <summary>
+            Service responsible for scraping addon data from sceneryaddons.org.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.#ctor(System.Net.Http.HttpClient,Microsoft.Extensions.Logging.ILogger{Addons.Api.Services.ScraperService},Addons.Api.Hubs.ISignalRNotificationService)">
+            <summary>
+            Initializes a new instance of the ScraperService.
+            </summary>
+            <param name="httpClient">The HTTP client for making requests.</param>
+            <param name="logger">The logger instance.</param>
+            <param name="signalRService">The SignalR notification service.</param>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.ScrapeAddonsAsync(System.Boolean,System.Func{System.Collections.Generic.List{Addons.Api.Models.Addon},System.Threading.Tasks.Task},System.Int32)">
+            <summary>
+            Scrapes addon data from the sceneryaddons.org master list.
+            </summary>
+            <param name="downloadImages">Whether to download images for addons (default: false)</param>
+            <param name="batchProcessor">Optional callback for processing batches as they're collected (for streaming mode)</param>
+            <param name="batchSize">Size of batches when using streaming mode (default: 10)</param>
+            <returns>A list of scraped addon records.</returns>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.TryParseDate(System.String,System.DateTime@)">
+            <summary>
+            Attempts to parse a date string from various formats.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.ExtractFileNameFromUrl(System.String)">
+            <summary>
+            Extracts the filename from a download URL.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.FindAddonName(System.Collections.Generic.List{HtmlAgilityPack.HtmlNode},System.Int32)">
+            <summary>
+            Finds the addon name by looking for the title anchor after download links.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.FindCompatibility(System.Collections.Generic.List{HtmlAgilityPack.HtmlNode},System.Int32,System.String)">
+            <summary>
+            Finds the compatibility information that appears after the addon name.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.IsValidCompatibility(System.String)">
+            <summary>
+            Validates if the text represents a valid compatibility string.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.ExtractAuthor(System.String)">
+            <summary>
+            Extracts author information from the addon name.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.ExtractCategories(System.String)">
+            <summary>
+            Extracts category information from the addon name.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.DownloadImageAsync(System.String)">
+            <summary>
+            Downloads an image from URL and converts it to base64 string.
+            </summary>
+            <param name="imageUrl">URL of the image to download</param>
+            <returns>Tuple of (base64 data, content type)</returns>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.CleanAddonName(System.String)">
+            <summary>
+            Cleans addon names by decoding HTML entities and removing unwanted characters.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.ExtractThumbnailUrl(System.Collections.Generic.List{HtmlAgilityPack.HtmlNode},System.Int32,System.String)">
+            <summary>
+            Extracts thumbnail URL for the addon from nearby image elements.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.IsRelevantThumbnail(System.String,System.String,System.String)">
+            <summary>
+            Determines if an image is relevant as a thumbnail for the addon.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.FindAddonDetailPageUrl(System.Collections.Generic.List{HtmlAgilityPack.HtmlNode},System.Int32,System.String)">
+            <summary>
+            Finds the addon detail page URL by looking for links in the content.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.GenerateSlugPatterns(System.String,System.String)">
+            <summary>
+            Generates various slug patterns that might match the addon URL.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.ScraperService.GetImageFromDetailPageAsync(System.String)">
+            <summary>
+            Gets high-quality image from addon detail page.
+            </summary>
+        </member>
+        <member name="T:Addons.Api.Services.TorrentDownloadService">
+            <summary>
+            Service for downloading files via BitTorrent using MonoTorrent.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.TorrentDownloadService.GetMagnetLinkAsync(System.String)">
+            <summary>
+            Gets the magnet link from a SceneryAddons.org torrent URL.
+            </summary>
+            <param name="torrentUrl">Torrent URL from SceneryAddons.org</param>
+            <returns>Magnet link or empty string if not found</returns>
+        </member>
+        <member name="M:Addons.Api.Services.TorrentDownloadService.DownloadTorrentAsync(System.String,Addons.Api.Models.DownloadItem,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Downloads a file using BitTorrent.
+            </summary>
+            <param name="magnetLink">Magnet link</param>
+            <param name="downloadItem">Download item to update</param>
+            <param name="compatibility">Compatibility folder (2020, 2024, 2020/2024)</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>True if download was successful</returns>
+        </member>
+        <member name="M:Addons.Api.Services.TorrentDownloadService.GetCompatibilityFolder(System.String)">
+            <summary>
+            Gets the appropriate folder name for compatibility.
+            </summary>
+            <param name="compatibility">Compatibility string</param>
+            <returns>Folder name</returns>
+        </member>
+        <member name="M:Addons.Api.Services.TorrentDownloadService.StopAllTorrentsAsync">
+            <summary>
+            Stops all active torrents.
+            </summary>
+        </member>
+        <member name="M:Addons.Api.Services.TorrentDownloadService.Dispose">
+            <summary>
+            Disposes the torrent engine and stops all downloads.
+            </summary>
+        </member>
+    </members>
+</doc>
